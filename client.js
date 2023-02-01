@@ -204,7 +204,7 @@ function voiceEventHandler(voiceEvent) {
       const eventMsg = `[${call.voice_id}] Play finished. Disconnecting the call`;
       logger.info(eventMsg);
       sseMsg.push(eventMsg);
-      connectBroadCast(voiceEvent.broadcast_id, voiceEvent.voice_id , '12028528186', '14435721378', () => {});
+      connectBroadCast(voiceEvent.broadcast_id, voiceEvent.voice_id , process.env.FROM, '14435721378', () => {});
     }
   }
 }
