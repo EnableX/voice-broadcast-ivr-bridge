@@ -9,8 +9,8 @@ This example contains instructions how users can initiate Broadcast Calls.
 
 
 ## Installation
-- `git clone https://github.com/EnableX/voice-api-broadcast.git`
-- `cd voice-api-broadcast`
+- `git clone https://github.com/EnableX/voice-broadcast-ivr-bridge.git`
+- `cd voice-broadcast-ivr-bridge`
 - `npm install`
 
 
@@ -82,4 +82,4 @@ Windows
 
 ## Starting the client application script
 - For Broadcast Calls
-  - `node client-broadcast.js`
+  - `node client.js`
