@@ -1,5 +1,5 @@
-# **Basic Client Examples to demonstrate Broadcast Calls using Enablex Voice APIs. **
-This example contains instructions how users can initiate Broadcast Calls.
+# **Basic Client Examples to demonstrate Broadcast Calls with bridging using Enablex Voice APIs. **
+This example contains instructions how users can initiate Broadcast Calls to multiple numbers and handle the webhook response individually and bridge the call to other number.
 
 
 ## Pre-requisite
