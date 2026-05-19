@@ -1,70 +1,102 @@
-/// ////////////////////////////////////////////////////
-//
-// This is application file which accept some inputs to start a EnableX voice call
-//
-/// //////////////////////////////////////////////////
-
-// eslint-disable-next-line func-names
 window.onload = function () {
-  // eslint-disable-next-line no-undef
-  $('.voice_call_div').show();
+  // Pre-fill default prompt texts so the form is ready to use immediately
+  document.getElementById('welcomePrompt').value =
+    'Welcome to our service. Please listen carefully to the following options.';
+  document.getElementById('ivrPrompt').value =
+    'Press 1 for Sales. Press 2 for Support.';
+  document.getElementById('wrongDigitPrompt').value =
+    'Sorry, that was an invalid option. Please try again.';
+  document.getElementById('timeoutPrompt').value =
+    'We did not receive your input. Please try again.';
 };
 
-// toastr library options
-// eslint-disable-next-line no-undef
+// toastr options
 toastr.options = {
-  closeButton: false,
-  debug: false,
-  newestOnTop: false,
-  progressBar: false,
+  closeButton: true,
+  progressBar: true,
   positionClass: 'toast-top-right',
-  preventDuplicates: false,
-  onclick: null,
-  showDuration: '300',
-  hideDuration: '1000',
   timeOut: '5000',
-  extendedTimeOut: '1000',
-  showEasing: 'swing',
-  hideEasing: 'linear',
-  showMethod: 'fadeIn',
-  hideMethod: 'fadeOut',
 };
 
-// make an ajax request to API to start a voice call
-// It accepts the payload for the request
-function makeCall(details, callback) {
-  const xhttp = new XMLHttpRequest();
+// POST broadcast call config to server
+function initiateCall(payload, callback) {
+  var xhttp = new XMLHttpRequest();
   xhttp.onreadystatechange = function () {
-    if (this.readyState === 4 && this.status >= 200) {
-      // const response = JSON.parse(this.responseText);
-      const response = this.responseText;
-      if (response.state === 'failed') {
-        // eslint-disable-next-line no-undef
-        toastr.error(response.state);
+    if (this.readyState === 4) {
+      if (this.status >= 200 && this.status < 300) {
+        callback(null, JSON.parse(this.responseText));
       } else {
-        callback(response);
+        callback(new Error('Server returned ' + this.status), null);
       }
     }
   };
-  xhttp.open('POST', './broadcast-call/', true);
+  xhttp.open('POST', '/broadcast-call/', true);
   xhttp.setRequestHeader('Content-Type', 'application/json');
-  xhttp.send(JSON.stringify(details));
+  xhttp.send(JSON.stringify(payload));
 }
 
-//
-document.getElementById('voice_call_form').addEventListener('submit', (event) => {
+document.getElementById('voice_call_form').addEventListener('submit', function (event) {
   event.preventDefault();
 
-  const retData = {
-    from: document.getElementById('fromNumber').value,
-    to: document.getElementById('toNumber').value,
-    play_text: document.getElementById('promptMessage').value,
-    play_voice: document.getElementById('voice').value,
+  var fromNumber       = document.getElementById('fromNumber').value.trim();
+  var toNumber         = document.getElementById('toNumber').value.trim();
+  var voice            = document.getElementById('voice').value;
+  var language         = document.getElementById('language').value;
+  var welcomePrompt    = document.getElementById('welcomePrompt').value.trim();
+  var ivrPrompt        = document.getElementById('ivrPrompt').value.trim();
+  var wrongDigitPrompt = document.getElementById('wrongDigitPrompt').value.trim();
+  var timeoutPrompt    = document.getElementById('timeoutPrompt').value.trim();
+  var digit1Number     = document.getElementById('digit1Number').value.trim();
+  var digit2Number     = document.getElementById('digit2Number').value.trim();
+
+  var msgEl = document.getElementById('message');
+
+  if (!fromNumber || !toNumber) {
+    msgEl.textContent = 'From Number and To Number are required.';
+    return;
+  }
+  if (!digit1Number || !digit2Number) {
+    msgEl.textContent = 'Both Digit-1 and Digit-2 bridge numbers are required.';
+    return;
+  }
+  if (!welcomePrompt || !ivrPrompt) {
+    msgEl.textContent = 'Welcome Prompt and IVR Menu Prompt are required.';
+    return;
+  }
+  msgEl.textContent = '';
+
+  var callBtn = document.getElementById('callBtn');
+  callBtn.disabled = true;
+  callBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Calling…';
+
+  // Clear previous log
+  document.getElementById('callLog').innerHTML = '';
+  document.getElementById('callStatus').style.display = 'none';
+
+  var payload = {
+    from:             fromNumber,
+    to:               toNumber,
+    play_voice:       voice,
+    play_language:    language,
+    welcomePrompt:    welcomePrompt,
+    ivrPrompt:        ivrPrompt,
+    wrongDigitPrompt: wrongDigitPrompt,
+    timeoutPrompt:    timeoutPrompt,
+    digit1Number:     digit1Number,
+    digit2Number:     digit2Number,
   };
 
-  // console.log(JSON.stringify(retData));
+  initiateCall(payload, function (err, response) {
+    callBtn.disabled = false;
+    callBtn.innerHTML = '<i class="fa fa-broadcast-tower"></i> Start Broadcast';
 
-  makeCall(retData, (response) => {
-    console.log(response);
+    if (err) {
+      toastr.error('Failed to initiate broadcast. Check server logs.');
+      msgEl.textContent = 'Error: ' + err.message;
+      return;
+    }
+
+    toastr.success('Broadcast initiated! ID: ' + (response.broadcast_id || 'N/A'));
+    document.getElementById('callStatus').style.display = 'block';
   });
 });

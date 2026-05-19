@@ -8,7 +8,7 @@ const logger = require('./logger');
 
 // EnableX server REST API call default options
 const httpOptions = {
-  host: 'api-qa.enablex.io',
+  host: 'api.enablex.io',
   port: 443,
   headers: {
     Authorization: `Basic ${btoa(`${process.env.ENABLEX_APP_ID}:${process.env.ENABLEX_APP_KEY}`)}`,
@@ -43,31 +43,21 @@ const connectEnablexServer = (data, callback) => {
   }
 };
 
-// Voice API call to broadcast IVR using TTS
-function playBroadcastIVR(callAppInstance, voiceId, text, language, ttsPlayVoice, prompt_ref, callback) {
-  httpOptions.path = `/voice/v1/broadcast/${callAppInstance}/call/${voiceId}/play`;
+// Play TTS on active call — PUT /voice/v1/call/{voice_id}/play
+// Set dtmf=true to collect a DTMF digit after the prompt plays
+function playBroadcastIVR(voiceId, text, language, ttsPlayVoice, prompt_ref, dtmf, callback) {
+  httpOptions.path = `/voice/v1/call/${voiceId}/play`;
   httpOptions.method = 'PUT';
 
   const postData = JSON.stringify({
+    play: {
+      type: 'tts',
       text: text,
       voice: ttsPlayVoice,
       language: language,
       prompt_ref: prompt_ref,
-      dtmf: true
-  });
-
-  connectEnablexServer(postData, (response) => {
-    callback(response);
-  });
-}
-
-function connectBroadCast(callAppInstance, voiceId, fromNumber , toNumber, callback) {
-  httpOptions.path = `/voice/v1/broadcast/${callAppInstance}/call/${voiceId}/connect`;
-  httpOptions.method = 'PUT';
-
-  const postData = JSON.stringify({
-    from : fromNumber,
-    to : toNumber
+      dtmf: dtmf,
+    },
   });
 
   connectEnablexServer(postData, (response) => {
@@ -76,10 +66,25 @@ function connectBroadCast(callAppInstance, voiceId, fromNumber , toNumber, callb
   });
 }
 
+// Bridge/connect active call to another number — PUT /voice/v1/call/{voice_id}/connect
+function connectBroadCast(voiceId, fromNumber, toNumber, callback) {
+  httpOptions.path = `/voice/v1/call/${voiceId}/connect`;
+  httpOptions.method = 'PUT';
 
-// Voice API call to hangup the call
-function hangupCall(callAppInstance, voiceId, callback) {
-  httpOptions.path = `/voice/v1/broadcast/${callAppInstance}/call/${voiceId}`;
+  const postData = JSON.stringify({
+    from: fromNumber,
+    to: toNumber,
+  });
+
+  connectEnablexServer(postData, (response) => {
+    logger.info(`RESPONSE:- ${response}`);
+    callback(response);
+  });
+}
+
+// Terminate an active call — DELETE /voice/v1/call/{voice_id}
+function hangupCall(voiceId, callback) {
+  httpOptions.path = `/voice/v1/call/${voiceId}`;
   httpOptions.method = 'DELETE';
   connectEnablexServer('', (response) => {
     logger.info(`RESPONSE:- ${response}`);
@@ -87,35 +92,28 @@ function hangupCall(callAppInstance, voiceId, callback) {
   });
 }
 
-// Voice API call to make an outbound call
+// Initiate broadcast call — POST /voice/v1/broadcast
 function makeBroadcastCall(reqDetails, callback) {
   httpOptions.path = '/voice/v1/broadcast';
   httpOptions.method = 'POST';
 
-  const jsonNumberArray = reqDetails.to.split(',');
-  const broadCastNumbers = [];
-
-  jsonNumberArray.forEach((phoneNumber) => {
-    broadCastNumbers.push({ phone: phoneNumber });
-  });
+  const recipients = reqDetails.to.split(',').map((phoneNumber) => ({
+    to: phoneNumber.trim(),
+    play: {
+      type: 'tts',
+      text: reqDetails.play_text,
+      voice: reqDetails.play_voice,
+      language: reqDetails.play_language,
+      prompt_ref: reqDetails.prompt_ref,
+    },
+  }));
 
   const postData = JSON.stringify({
     name: 'TEST_APP',
     owner_ref: 'XYZ',
-    broadcast_numbers: JSON.stringify(broadCastNumbers),
     from: reqDetails.from,
-    action_on_connect: {
-      play: {
-        text: reqDetails.play_text,
-        voice: reqDetails.play_voice,
-        language: reqDetails.play_language,
-        prompt_ref: reqDetails.prompt_ref,
-      },
-    },
-    call_param: {
-      IntervalBetweenRetries: 5000,
-      NumberOfRetries: 3,
-    },
+    answering_machine_detection: false,
+    recipients: recipients,
     event_url: `${process.env.PUBLIC_WEBHOOK_URL}/event`,
     call_handler_url: `${process.env.PUBLIC_WEBHOOK_URL}/event`,
   });

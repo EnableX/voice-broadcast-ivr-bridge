@@ -3,25 +3,55 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="description" content="EnableX Voice Service">
+  <meta name="description" content="EnableX Voice Service — Broadcast IVR DTMF Bridge">
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>Sample App: Make an outbound call using EnableX Voice Service</title>
+  <title>EnableX Voice — Broadcast IVR Bridge</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/css/all.min.css"
     integrity="sha256-h20CPZ0QyXlBuAw7A+KluUYx/3pK+c7lYEpqLTlxjYQ=" crossorigin="anonymous" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/css/fontawesome.min.css"
-    integrity="sha256-CuUPKpitgFmSNQuPDL5cEfPOOJT/+bwUlhfumDJ9CI4=" crossorigin="anonymous" />
   <link rel="shortcut icon" type="image/ico" href="./public/img/favicon.ico" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.0/css/bootstrap.min.css"
     integrity="sha256-aAr2Zpq8MZ+YA/D6JtRD3xtrwpEz2IqOS+pWD/7XKIw=" crossorigin="anonymous" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.css"
     integrity="sha256-R91pD48xW+oHbpJYGn5xR0Q7tMhH4xOrWn1QqMRINtA=" crossorigin="anonymous" />
   <link href="./public/css/style-sign-in.css" rel="stylesheet">
+  <style>
+    .section-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+      margin-bottom: 12px;
+      margin-top: 8px;
+    }
+    .prompt-ref-badge {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-family: monospace;
+    }
+    .retry-info {
+      background: var(--warning-light);
+      border: 1px solid var(--warning);
+      border-radius: 4px;
+      padding: 6px 10px;
+      font-size: 0.8rem;
+      margin-bottom: 12px;
+    }
+    #callLog li {
+      padding: 4px 0;
+      border-bottom: 1px solid var(--border-light);
+      font-size: 0.875rem;
+    }
+    #callLog li:last-child { border-bottom: none; }
+    #callStatus { display: none; margin-top: 12px; }
+  </style>
 </head>
 
 <body>
   <header>
-    <!-- =================================================== Nav section ============================-->
     <div id="app" class="container">
       <nav class="navbar navbar-expand-lg navbar-light">
         <a class="navbar-brand" href="https://www.enablex.io/">
@@ -30,88 +60,259 @@
         <div class="navbar-collapse collapse nav justify-content-end">
           <ul class="nav justify-content-end ton-hedr-nav">
             <li class="nav-item">
-              <a class="nav-link login">Sample Code <span class='fa fa-code'></span></a>
+              <a class="nav-link login">Broadcast IVR DTMF Bridge <span class="fa fa-code"></span></a>
             </li>
           </ul>
         </div>
       </nav>
     </div>
   </header>
-  <div class="container">
-    <div class="row d-flex justify-content-center align-items-baseline">
-      <div class="col-12 col-md-12 col-xl-6 col-lg-6">
-        <div class="form-bg" class="voice_call_div" style="display: block;">
-          <h1 class="text-center">Start a Voice Call</h1>
-          <form class="mt-4" id="voice_call_form">
-            <div class="form-row">
-              <div class="form-group col-12">
-                <input type="text" class="form-control" id="fromNumber" name="fromNumber" placeholder="From Number" required>
-                <small id="fromNumberHelp" class="form-text text-muted">The Calling Line Identity assigned
-                  on the outbound number and configured <a
-                    href="https://portal.enablex.io/projects/dashboard/voice/phone-numbers/">Here</a>.
-                  <br />Example - <b>911234567890</b> (without +)</small>
-              </div>
+
+  <!-- ===== Setup Guide ===== -->
+  <div class="container mt-3">
+    <div class="setup-guide">
+      <button class="setup-guide-toggle" data-toggle="collapse" data-target="#setupGuide" aria-expanded="false">
+        <span class="fa fa-info-circle mr-2"></span>Setup Guide — How to run this sample
+        <span class="fa fa-chevron-down toggle-icon ml-auto"></span>
+      </button>
+      <div id="setupGuide" class="collapse">
+        <div class="setup-steps">
+          <div class="setup-step">
+            <div class="step-number">1</div>
+            <div class="step-body">
+              <h6>Install dependencies</h6>
+              <code>npm install</code>
             </div>
-            <div class="form-row">
-              <div class="form-group col-12">
-                <input type="text" class="form-control" id="toNumber" name="toNumber" placeholder="To Number" required>
-                <small id="toNumberHelp" class="form-text text-muted">Destination number. Multiple numbers comma (,) separated. Should be
-                  formatted with a country code (91 for India, 1 for US etc.). <br />Example -
-                  <b>911234567890,911234567891</b> (without +)</small>
-              </div>
+          </div>
+          <div class="step-divider"></div>
+          <div class="setup-step">
+            <div class="step-number">2</div>
+            <div class="step-body">
+              <h6>Configure credentials</h6>
+              <code>cp env-example .env</code>
+              <p>Edit <strong>.env</strong> and fill in <strong>ENABLEX_APP_ID</strong>, <strong>ENABLEX_APP_KEY</strong>, and set <strong>LISTEN_SSL=false</strong>.</p>
             </div>
-            <div class="form-row">
-              <div class="form-group col-md-12">
-                <select class="selectpicker show-menu-arrow form-control" id="voice" name="voice" required>
-                  <option value="female">Female</option>
-                  <option value="male">Male</option>
-                </select>
-                <small id="languageHelp" class="form-text text-muted">The preferred spoken voice for
-                  TTS.</small>
-              </div>
+          </div>
+          <div class="step-divider"></div>
+          <div class="setup-step">
+            <div class="step-number">3</div>
+            <div class="step-body">
+              <h6>Create an ngrok tunnel</h6>
+              <code>ngrok http 3000</code>
+              <p>Copy the <strong>https://…ngrok.io</strong> URL and set it as <strong>PUBLIC_WEBHOOK_URL</strong> in <strong>.env</strong>.</p>
             </div>
-            <div class="form-row">
-              <div class="form-group col-12">
-                <textarea id="promptMessage" name="promptMessage" class="md-textarea form-control" rows="3"></textarea>
-                <label for="form7">What would you like to hear as greeting?</label>
-                <small id="promptMessageHelp" class="form-text text-muted">TTS (Text to speech) to play at
-                  the prompt. <br />Example - <b>This is a sample message for testing EnableX voice
-                    call</b>.</small>
-              </div>
+          </div>
+          <div class="step-divider"></div>
+          <div class="setup-step">
+            <div class="step-number">4</div>
+            <div class="step-body">
+              <h6>Start the server</h6>
+              <code>npm start</code>
+              <p>Open <strong>http://localhost:3000</strong> and use the form below to place a call.</p>
             </div>
-            <div class="form-row">
-              <div class="form-group col-md-12">
-                <input type="checkbox" name="agree" style="height: 15px;width:15px;" checked>
-                <label>I
-                  agree to <a target="_blank" href="https://www.enablex.io/legals/tou/">Terms of
-                    Use</a> and <a target="_blank" href="https://www.enablex.io/legals/privacy-policy/">Privacy
-                    Policy</a>
-                </label>
-              </div>
-            </div>
-            <div class="form-row justify-content-start">
-              <div class="form-group col-12 checkbox-sec">
-                <div>
-                  <div>
-                    <input type="submit" value="Call" class="btn btn-primary" id="joinRoom">
-                  </div>
-                  <br>
-                  <span id="message" style="color: red"></span>
-                </div>
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
-      <div class="col-12 col-md-12 col-xl-6 col-lg-6">
-        <div class="form-bg" class="voice_call_div" style="display: block;">
-          <h3 class="text-left">List of actions when call started:</h3>
-          <ul id="myList">
-          </ul>
+          </div>
         </div>
       </div>
     </div>
   </div>
+
+  <div class="container">
+    <div class="row d-flex justify-content-center align-items-baseline">
+
+      <!-- ── Left column: Configuration form ─────────────────────────── -->
+      <div class="col-12 col-md-12 col-xl-6 col-lg-6">
+        <div class="form-bg">
+          <h1 class="text-center">Configure Broadcast IVR</h1>
+
+          <form class="mt-4" id="voice_call_form">
+
+            <!-- Call Setup -->
+            <p class="section-label">Call Setup</p>
+
+            <div class="form-row">
+              <div class="form-group col-12">
+                <input type="text" class="form-control" id="fromNumber" name="fromNumber"
+                  placeholder="From Number (e.g. 12012774877)" required>
+                <small class="form-text text-muted">
+                  CLI assigned to the outbound virtual number configured in your
+                  <a href="https://portal.enablex.io/projects/dashboard/voice/phone-numbers/">EnableX portal</a>.
+                  No + prefix.
+                </small>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group col-12">
+                <input type="text" class="form-control" id="toNumber" name="toNumber"
+                  placeholder="To Number(s) — comma-separated" required>
+                <small class="form-text text-muted">
+                  Destination number(s) with country code. Separate multiple numbers with commas.<br>
+                  Example: <b>918088394833,919480326954</b>
+                </small>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group col-6">
+                <select class="form-control" id="voice" name="voice" required>
+                  <option value="female">Female</option>
+                  <option value="male">Male</option>
+                </select>
+                <small class="form-text text-muted">TTS voice gender.</small>
+              </div>
+              <div class="form-group col-6">
+                <select class="form-control" id="language" name="language" required>
+                  <option value="en-US">English (US)</option>
+                  <option value="en-IN">English (India)</option>
+                  <option value="en-GB">English (GB)</option>
+                  <option value="hi-IN">Hindi (India)</option>
+                  <option value="mr-IN">Marathi (India)</option>
+                  <option value="ta-IN">Tamil (India)</option>
+                  <option value="te-IN">Telugu (India)</option>
+                  <option value="es-US">Spanish (US)</option>
+                </select>
+                <small class="form-text text-muted">TTS language.</small>
+              </div>
+            </div>
+
+            <!-- Prompts -->
+            <p class="section-label mt-3">Prompts</p>
+
+            <div class="form-row">
+              <div class="form-group col-12">
+                <label>Welcome Prompt
+                  <span class="prompt-ref-badge">[prompt_ref: welcome_prompt]</span>
+                </label>
+                <textarea class="form-control" id="welcomePrompt" rows="2"
+                  placeholder="Welcome to our service. Please listen carefully to the following options."></textarea>
+                <small class="form-text text-muted">Played immediately when the call connects.</small>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group col-12">
+                <label>IVR Menu Prompt
+                  <span class="prompt-ref-badge">[prompt_ref: ivr_prompt]</span>
+                </label>
+                <textarea class="form-control" id="ivrPrompt" rows="2"
+                  placeholder="Press 1 for Sales. Press 2 for Support."></textarea>
+                <small class="form-text text-muted">Played after welcome. Waits for DTMF digit (1 or 2).</small>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group col-12">
+                <label>Wrong Digit Prompt
+                  <span class="prompt-ref-badge">[prompt_ref: wrong_digit_prompt]</span>
+                </label>
+                <textarea class="form-control" id="wrongDigitPrompt" rows="2"
+                  placeholder="Sorry, that was an invalid option. Please try again."></textarea>
+                <small class="form-text text-muted">Played when caller presses an invalid digit. IVR menu repeats after this.</small>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group col-12">
+                <label>Menu Timeout Prompt
+                  <span class="prompt-ref-badge">[prompt_ref: timeout_prompt]</span>
+                </label>
+                <textarea class="form-control" id="timeoutPrompt" rows="2"
+                  placeholder="We did not receive your input. Please try again."></textarea>
+                <small class="form-text text-muted">Played when no digit is received within the timeout window. IVR menu repeats after this.</small>
+              </div>
+            </div>
+
+            <!-- Bridge Destinations -->
+            <p class="section-label mt-3">Bridge Destinations</p>
+
+            <div class="retry-info">
+              <i class="fa fa-info-circle"></i>
+              Maximum <strong>3 attempts</strong> total (wrong digits + timeouts combined).
+              After that, the call is disconnected automatically.
+            </div>
+
+            <div class="form-row">
+              <div class="form-group col-12">
+                <label>Digit <strong>1</strong> — Bridge to Number</label>
+                <input type="text" class="form-control" id="digit1Number" name="digit1Number"
+                  placeholder="e.g. 918088394833" required>
+                <small class="form-text text-muted">Number to bridge when caller presses <b>1</b>.</small>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group col-12">
+                <label>Digit <strong>2</strong> — Bridge to Number</label>
+                <input type="text" class="form-control" id="digit2Number" name="digit2Number"
+                  placeholder="e.g. 919480326954" required>
+                <small class="form-text text-muted">Number to bridge when caller presses <b>2</b>.</small>
+              </div>
+            </div>
+
+            <!-- Terms & Submit -->
+            <div class="form-row mt-2">
+              <div class="form-group col-12">
+                <input type="checkbox" id="agreeCheck" style="accent-color:var(--brand)" checked>
+                <label for="agreeCheck" style="margin-left:6px;">I agree to
+                  <a target="_blank" href="https://www.enablex.io/legals/tou/">Terms of Use</a> and
+                  <a target="_blank" href="https://www.enablex.io/legals/privacy-policy/">Privacy Policy</a>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group col-12">
+                <button type="submit" class="btn btn-primary btn-block" id="callBtn">
+                  <i class="fa fa-broadcast-tower"></i> Start Broadcast
+                </button>
+                <span id="message" class="error-message" style="display:block; margin-top:6px;"></span>
+              </div>
+            </div>
+
+            <div id="callStatus" class="alert alert-success">
+              <i class="fa fa-check-circle"></i> Broadcast call initiated successfully.
+            </div>
+
+          </form>
+        </div>
+      </div>
+
+      <!-- ── Right column: Live event log + flow diagram ──────────────── -->
+      <div class="col-12 col-md-12 col-xl-6 col-lg-6">
+
+        <div class="form-bg">
+          <h3 class="text-left">
+            Live Call Events
+            <small class="text-muted" style="font-size:0.75rem; font-weight:normal;">(streamed via SSE)</small>
+          </h3>
+          <p class="events-empty-msg" id="eventsEmpty"><span class="fa fa-clock mr-1"></span>Events will appear here once a call starts.</p>
+          <ul id="callLog" class="list-unstyled mt-3 events-list" style="max-height:360px; overflow-y:auto;"></ul>
+        </div>
+
+        <!-- IVR Flow diagram -->
+        <div class="form-bg mt-3">
+          <h5>IVR Call Flow</h5>
+          <pre style="font-size:0.75rem;background:var(--surface-raised);border:1px solid var(--border);padding:14px;border-radius:var(--radius-sm);overflow-x:auto;">
+Broadcast call connects (per recipient)
+  └─▶ welcome_prompt plays
+        └─▶ ivr_prompt plays  (waits for digit)
+              ├─ Digit 1 ──▶ bridge_announcement_1
+              │                └─▶ Bridge to Digit-1 Number
+              ├─ Digit 2 ──▶ bridge_announcement_2
+              │                └─▶ Bridge to Digit-2 Number
+              ├─ Wrong   ──▶ wrong_digit_prompt
+              │                └─▶ ivr_prompt  (retry++)
+              └─ Timeout ──▶ timeout_prompt
+                               └─▶ ivr_prompt  (retry++)
+                                      ↓ after 3 attempts
+                               max_retry_prompt ──▶ Hangup</pre>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
   <footer>
     <div class="container">
       <div class="row">
@@ -127,6 +328,7 @@
       </div>
     </div>
   </footer>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"
     integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.0/js/bootstrap.min.js"
@@ -134,30 +336,50 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.js"
     integrity="sha256-yNbKY1y6h2rbVcQtf0b8lq4a+xpktyFc3pSYoGAY1qQ=" crossorigin="anonymous"></script>
   <script type="text/javascript" src="./public/js/index.js"></script>
+
   <script>
+    function appendWebhookEvent(rawJson, containerEl) {
+      var formatted;
+      try { formatted = JSON.stringify(JSON.parse(rawJson), null, 2); } catch(_) { formatted = rawJson; }
+      var safe = formatted.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      var ts = new Date().toLocaleTimeString();
+      var li = document.createElement('li');
+      li.style.cssText = 'padding:6px 0;border-bottom:1px solid #f0f0f0;list-style:none;';
+      li.innerHTML = '<span style="color:#999;font-size:0.72rem;margin-right:6px;">' + ts + '</span>'
+        + '<details>'
+        + '<summary style="cursor:pointer;color:#0057b8;font-size:0.8rem;font-weight:600;display:inline;">&#x2691; Webhook Event</summary>'
+        + '<pre style="background:#f4f6f9;border:1px solid #dde;padding:8px 10px;border-radius:4px;font-size:0.7rem;max-height:200px;overflow:auto;margin-top:6px;white-space:pre-wrap;word-break:break-all;">' + safe + '</pre>'
+        + '</details>';
+      containerEl.appendChild(li);
+      containerEl.scrollTop = containerEl.scrollHeight;
+    }
 
     if (!!window.EventSource) {
       var evtSource = new EventSource('/event-stream');
-      var eventList = document.getElementById("myList");
+      var callLog = document.getElementById('callLog');
 
       evtSource.onopen = function () {
-        console.log("Connection to server opened.");
+        console.log('SSE connection opened.');
       };
 
-      evtSource.onevent
-
       evtSource.onmessage = function (e) {
-        var newElement = document.createElement("li");
-
-        newElement.textContent = e.data + "\n\n";
-        eventList.appendChild(newElement);
+        var _ep = document.getElementById('eventsEmpty'); if (_ep) _ep.style.display = 'none';
+        if (e.data.startsWith('__WEBHOOK__:')) {
+          appendWebhookEvent(e.data.slice('__WEBHOOK__:'.length), callLog);
+          return;
+        }
+        var li = document.createElement('li');
+        var ts = new Date().toLocaleTimeString();
+        li.innerHTML = '<span style="color:#6c757d;font-size:0.75rem;">[' + ts + ']</span> ' + e.data;
+        callLog.appendChild(li);
+        callLog.scrollTop = callLog.scrollHeight;
       };
 
       evtSource.onerror = function () {
-        console.log("EventSource failed.");
+        console.log('SSE connection error.');
       };
     } else {
-      alert('EventSource is not supported to this browser');
+      alert('Server-Sent Events are not supported in this browser.');
     }
   </script>
 </body>

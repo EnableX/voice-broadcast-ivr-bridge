@@ -36,7 +36,7 @@ FROM=
 BROADCAST_NUMBERS=+1xxxxxxxxxx,+1xxxxxxxxxx,+1xxxxxxxxxx
 #Set the Number for the call to be bridged based on the digits pressed.
 #This is for example purpose only , the logic to pick the free agent to bridge the call based on the digits depends on the use case.
-BRIDGETO='+1XXXXXXXXX1
+BRIDGETO=+1XXXXXXXXX1,+1XXXXXXXXX2
 
 # use the certificate .key [self signed or registered]
   CERTIFICATE_SSL_KEY=./certs/example.key
